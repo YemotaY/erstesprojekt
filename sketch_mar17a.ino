@@ -7,6 +7,18 @@ const int M1B = A1;
 const int M2A = A2;
 const int M2B = A3;
 
+/*
+// Hier wird per PWM der Gleichstrom-Getriebemotoren angesteuert
+// MOTOR 1
+const int M1A = D3;
+const int M1B = D5;
+
+// MOTOR 2
+const int M2A = D6;
+const int M2B = D9;
+
+*/
+
 // Geschwindigkeit
 int velocity = 128;
 // ###############################################
@@ -22,8 +34,7 @@ const int ECHO_PIN = 6;     // HC-SR04
 // ###############################################
 
 // Hilfsfunktionen Radar #########################
-
-void servoSetAngle(int targetAngle, int stepDelay = 100) {
+void servoSetAngle(int targetAngle, int stepDelay = 5) {
 
     targetAngle = constrain(targetAngle, 0, 180);
 
@@ -105,7 +116,7 @@ int scanEnvironment() {
     Serial.print(" R:");
     Serial.println(right);
 
-    if (front > 25)
+    if (front > 0)
         return 2;       // Geradeaus
 
     if (left > right)
@@ -118,11 +129,11 @@ int scanEnvironment() {
 
 // Hilfsfunktionen Räder #########################
 // Motor vorwärts/rückwärts
-int drive(int direction) {
+bool drive(int direction, int velocity) {
   // ↓ 0 ist rückwärt 
   // ↑ 1 ist vorwärts
   if (direction < 0 || direction > 1 ) {
-    Serial.write("Möööp Falsche werte du vollidiot");
+    Serial.println("Möööp Falsche werte du vollidiot");
     return 1;
   }
 
@@ -150,11 +161,11 @@ void stop(){
 }
 
 // Motor links/rechts
-int steer(int direction) {
+bool steer(int direction, int velocity) {
   if (direction < 0 || direction > 1) {
     // ← link ist 1
     // → rechts ist 0
-    Serial.write("Möööp Falsche werte du vollidiot");
+    Serial.println("Möööp Falsche werte du vollidiot");
     return 1;
   }
 
@@ -162,15 +173,44 @@ int steer(int direction) {
     analogWrite(M1A, velocity);
     analogWrite(M1B, 0);
     analogWrite(M2A, 0);
-    analogWrite(M2B, 0);
+    analogWrite(M2B, velocity); // Hier noch rückwärts anstatt einfach stoppen
     return 0;
   } else {
     analogWrite(M1A, 0);
-    analogWrite(M1B, 0);
+    analogWrite(M1B, velocity); // Hier noch rückwärts anstatt einfach stoppen
     analogWrite(M2A, velocity);
     analogWrite(M2B, 0);
     return 0;
   }
+}
+void testMotorSpeed() {
+
+    Serial.println("Starte Geschwindigkeitstest...");
+
+    // Vorwärts beschleunigen
+    for (int speed = 0; speed <= 255; speed += 25) {
+        Serial.print("PWM: ");
+        Serial.println(speed);
+
+        drive(1, speed);
+        delay(2000);
+    }
+
+    // Anhalten
+    stop();
+    delay(1000);
+
+    // Rückwärts beschleunigen
+    for (int speed = 0; speed <= 255; speed += 25) {
+        Serial.print("PWM: ");
+        Serial.println(speed);
+
+        drive(0, speed);
+        delay(2000);
+    }
+
+    stop();
+    Serial.println("Test beendet.");
 }
 // ###############################################
 
@@ -195,14 +235,14 @@ void setup() {
   servo.write(90);            // Radar nach vorne
 
   // Motorkontrollfunktionen
-  //if(!drive(1)){Serial.write("Konnte nicht fahren!")};
-  if(!steer(0)){Serial.write("Konnte nicht fahren!")};
+  //if(!drive(1,velocity)){Serial.write("Konnte nicht fahren!")};
+  if(!steer(0,velocity)){Serial.println("Konnte nicht fahren!");};
   
 }
 
 // Automatikmodu hier im Zyklus
 void loop() {
-
+    /*
     int decision = scanEnvironment();
 
     switch (decision) {
@@ -229,5 +269,6 @@ void loop() {
     }
 
     delay(100);
+    */
 }
 // ###############################################
